@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import Joi from "joi";
-import response from "../utils/response.util";
+import response from "@/utils/response.util";
 
 type RequestProperty = "params" | "query" | "body" | "headers";
 

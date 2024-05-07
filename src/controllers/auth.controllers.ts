@@ -1,10 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
-import prisma from "../database/mysql.database";
-import response from "../utils/response.util";
-import UserMapper from "../utils/data/mapping/user.util";
 import dotenv from "dotenv";
+
+import prisma from "@/database/mysql.database";
+import response from "@/utils/response.util";
+import UserMapper from "@/utils/data/mapping/user.util";
 dotenv.config();
 
 export const login = async (req: Request, res: Response) => {
