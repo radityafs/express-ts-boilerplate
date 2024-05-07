@@ -1,17 +1,18 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
-import config from "../config/config.json";
+import prisma from "../database/mysql.database";
 import response from "../utils/response.util";
 import UserMapper from "../utils/data/mapping/user.util";
-import User from "../models/User";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const login = async (req: Request, res: Response) => {
   let { email, password } = req.body;
 
   try {
     // Check email
-    const user = await User.findOne({
+    const user = await prisma.user.findUnique({
       where: {
         email,
       },
@@ -22,21 +23,30 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check password
-    const validPassword = bcrypt.compare(password, user.password);
+    const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
       return response.failed(res, "Invalid password", 400);
     }
 
     // Generate token
-    const token = jwt.sign({ id: user.id }, config.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
       expiresIn: "1d",
     });
+
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET!,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     // Response
     return response.success(res, "Login success", {
       ...UserMapper(user),
       token,
+      refreshToken,
     });
   } catch (error: any) {
     return response.failed(res, error.message, 500);
@@ -48,12 +58,17 @@ export const register = async (req: Request, res: Response) => {
 
   try {
     // Hash password
-    const saltRounds = 10;
-    const salt = await bcrypt.genSalt(saltRounds);
+    const salt = await bcrypt.genSalt(10);
     password = await bcrypt.hash(password, salt);
 
     // Create user
-    const user = await new User({ name, email, password }).save();
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password,
+      },
+    });
 
     if (!user) {
       return response.failed(res, "Failed to create user", 500);
@@ -62,10 +77,6 @@ export const register = async (req: Request, res: Response) => {
     // Response
     return response.success(res, "Register success", UserMapper(user));
   } catch (error: any) {
-    if (error.message === "Validation error") {
-      return response.failed(res, "Email already exists", 400);
-    }
-
     return response.failed(res, error.message, 500);
   }
 };
