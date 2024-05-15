@@ -2,10 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
-
 import prisma from "@/database/mysql.database";
 import response from "@/utils/response.util";
-import UserMapper from "@/utils/data/mapping/user.util";
 dotenv.config();
 
 export const login = async (req: Request, res: Response) => {
@@ -31,12 +29,12 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate token
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+    const token = jwt.sign({ id: String(user.id) }, process.env.JWT_SECRET!, {
       expiresIn: "1d",
     });
 
     const refreshToken = jwt.sign(
-      { id: user.id },
+      { id: String(user.id) },
       process.env.JWT_REFRESH_SECRET!,
       {
         expiresIn: "7d",
@@ -45,12 +43,12 @@ export const login = async (req: Request, res: Response) => {
 
     // Response
     return response.success(res, "Login success", {
-      ...UserMapper(user),
+      ...user,
       token,
       refreshToken,
     });
   } catch (error: any) {
-    return response.failed(res, error.message, 500);
+    return response.failed(res, error, 500);
   }
 };
 
@@ -76,8 +74,8 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // Response
-    return response.success(res, "Register success", UserMapper(user));
+    return response.success(res, "Register success", user);
   } catch (error: any) {
-    return response.failed(res, error.message, 500);
+    return response.failed(res, error, 500);
   }
 };

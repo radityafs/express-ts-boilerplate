@@ -1,16 +1,27 @@
 import express, { Express } from "express";
-import authRoute from "@/routes/auth.route";
+import { AuthRoute, LocaleRoute } from "@/routes/index.route";
 import dotenv from "dotenv";
+import cors from "cors";
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: "*",
+  })
+);
+
+app.use("/public", express.static("public"));
 
 const api = express.Router();
 app.use("/api/v1", api);
-api.use("/auth", authRoute);
+
+api.use("/auth", AuthRoute);
+api.use("/locale", LocaleRoute);
 
 app.use((req, res) => {
   res.status(404).json({
